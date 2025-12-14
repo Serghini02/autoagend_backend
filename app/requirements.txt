@@ -9,3 +9,5 @@ passlib[bcrypt]
 python-jose[cryptography]
 python-dateutil
 psycopg2-binary
+pydantic[email]
+email-validator
