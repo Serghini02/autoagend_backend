@@ -31,9 +31,9 @@ Tu tarea es analizar un texto y detectar SI ES UN RECORDATORIO.
 Fecha actual: {now_iso}
 Zona horaria: {timezone}
 
-Un recordatorio suele implicar una acción futura específica ("recordarme llamar a X", "avisar antes de Y").
-Si es una tarea simple ("comprar leche", "limpiar coche") pero con fecha límite, también puede ser recordatorio.
-Si es un evento ("reunión lunes 17h"), trátalo como "event".
+Un recordatorio suele implicar una acción futura específica ("recordarme llamar a X", "avisar antes de Y", "recuérdame...").
+- Palabras clave: "recordar", "avisar", "acordar", "notificar".
+- Si el usuario dice explícitamente "recuerdame" o "recordatorio", SIEMPRE es reminder.
 
 Devuelve JSON EXACTO:
 {{
@@ -44,13 +44,16 @@ Devuelve JSON EXACTO:
   "deadline": "texto original de la fecha límite" o null,
   "has_deadline": bool,
   "remind_at_text": "texto original de cuándo recordar" o null,
-  "needs_conversation": bool (true si falta info crucial sobre CUÁNDO recordar)
+  "needs_conversation": bool
 }}
 
-Reglas:
-1. Si el usuario dice "recordarme X antes del jueves", faltan datos (¿cuánto antes?). needs_conversation=true.
-2. Si usuario dice "recuérdame mañana a las 9", está completo. needs_conversation=false (o true si quieres confirmar).
-3. Si es "llamar a pepe", asume "task" y needs_conversation=false (se crea tarea normal).
+Reglas CRÍTICAS:
+1. needs_conversation = true SI falta información clara sobre CUÁNDO notificar.
+   - "Recordarme llamar a Juan" -> needs_conversation = true (¿Cuándo?).
+   - "Recordarme la reunión" -> needs_conversation = true (¿Cuándo?).
+2. needs_conversation = false SI ya tiene fecha/hora explícita y completa.
+   - "Recuérdame mañana a las 9 llamar a Juan" -> needs_conversation = false.
+3. Ante la duda, marca is_reminder = true y needs_conversation = true.
 """.strip()
 
     try:
