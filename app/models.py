@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -56,3 +56,29 @@ class Event(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
+
+
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Fecha límite de la tarea original (si existe)
+    deadline = Column(DateTime, nullable=True)
+    
+    # Cuándo debe sonar el recordatorio
+    remind_at = Column(DateTime, nullable=False)
+    
+    frequency = Column(String, default="once") # once, daily, weekly, monthly
+    rrule = Column(String, nullable=True)
+    
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    task = relationship("Task")

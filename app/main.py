@@ -9,7 +9,9 @@ from .routers.users import router as users_router
 from .routers.tasks import router as tasks_router
 from .routers.notes import router as notes_router
 from .routers.events import router as events_router
+from .routers.events import router as events_router
 from .routers.agenda import router as agenda_router
+from .routers.reminders import router as reminders_router
 
 app = FastAPI(title="AutoAgenda AI", version="1.4.0")
 
@@ -26,7 +28,9 @@ app.include_router(users_router)
 app.include_router(tasks_router)
 app.include_router(notes_router)
 app.include_router(events_router)
+app.include_router(events_router)
 app.include_router(agenda_router)
+app.include_router(reminders_router)
 
 app.add_middleware(
     CORSMiddleware,
