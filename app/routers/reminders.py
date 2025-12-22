@@ -42,11 +42,16 @@ def start_conversation(
         {"role": "user", "content": req.text}
     ]
 
-    ai_resp = generate_reminder_question(history, context, now_iso, tzname)
+    # Extract name from email (before @) and capitalize
+    raw_name = current_user.email.split("@")[0]
+    user_name = raw_name.capitalize() if raw_name else "Usuario"
+
+    ai_resp = generate_reminder_question(history, context, now_iso, tzname, user_name)
     
     # Save state
     CONVERSATIONS[conv_id] = {
         "user_id": current_user.id,
+        "user_name": user_name, # Save for later turns
         "history": history,
         "context": context,
         "step": ai_resp.get("next_step", "initial")
@@ -97,8 +102,9 @@ def respond(
 
     tzname = "Europe/Madrid"
     now_iso = datetime.now(ZoneInfo(tzname)).isoformat()
+    user_name = state.get("user_name", "Usuario")
 
-    ai_resp = generate_reminder_question(state["history"], context, now_iso, tzname)
+    ai_resp = generate_reminder_question(state["history"], context, now_iso, tzname, user_name)
     
     # Add AI response to history
     state["history"].append({"role": "assistant", "content": ai_resp.get("message", "")})

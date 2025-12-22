@@ -48,12 +48,12 @@ Devuelve JSON EXACTO:
 }}
 
 Reglas CRÍTICAS:
-1. needs_conversation = true SI falta información clara sobre CUÁNDO notificar.
-   - "Recordarme llamar a Juan" -> needs_conversation = true (¿Cuándo?).
-   - "Recordarme la reunión" -> needs_conversation = true (¿Cuándo?).
-2. needs_conversation = false SI ya tiene fecha/hora explícita y completa.
-   - "Recuérdame mañana a las 9 llamar a Juan" -> needs_conversation = false.
-3. Ante la duda, marca is_reminder = true y needs_conversation = true.
+1. MAXIMIZA LA EXTRACCIÓN: Si el texto contiene la acción Y el momento (fecha/hora), `needs_conversation` = false.
+   - "Recordarme llamar a Juan mañana a las 10" -> `needs_conversation` = false.
+   - "Acuérdame de comprar pan en 20 minutos" -> `needs_conversation` = false.
+2. SOLO pregunta si falta información CRUCIAL sobre CUÁNDO notificar.
+   - "Recordarme llamar a Juan" -> `needs_conversation` = true (¿Cuándo?).
+3. Ante la duda de si la hora es específica, asume que SÍ lo es si hay referencias temporales claras.
 """.strip()
 
     try:
@@ -80,7 +80,8 @@ def generate_reminder_question(
     conversation_history: List[Dict[str, str]],
     current_context: Dict[str, Any],
     now_iso: str, 
-    timezone: str
+    timezone: str,
+    user_name: str = "Usuario"
 ) -> Dict[str, Any]:
     """
     Genera la siguiente pregunta de Plani basada en el historial y contexto.
@@ -88,28 +89,32 @@ def generate_reminder_question(
     client = _get_client()
     if not client:
         return {
-            "message": "¿Cuándo quieres el recordatorio?",
+            "message": "¿Cuándo?",
             "quick_replies": [],
             "next_step": "complete"
         }
 
     system_prompt = f"""
-Eres Plani, un asistente amigable y eficiente.
-Estás en medio de una conversación para configurar un recordatorio.
-Contexto actual: {json.dumps(current_context, ensure_ascii=False)}
-Fecha actual: {now_iso}
+Eres Plani. Estás configurando un recordatorio para {user_name}.
+Contexto: {json.dumps(current_context, ensure_ascii=False)}
+Fecha: {now_iso}
 
-Tu objetivo es obtener la información faltante (cuándo recordar, frecuencia, etc).
-Sé breve. Usa emojis.
+Tu objetivo es obtener la información faltante (CUÁNDO) lo más rápido posible.
+1. Sé EXTREMADAMENTE BREVE.
+2. Dirígete a {user_name} por su nombre si es natural, pero no abuses.
+3. Si el usuario ya dio la info, confirma y cierra.
+4. Si falta la hora, pregunta "¿Cuándo?".
+5. Usa 1 emoji máx.
 
 Devuelve JSON:
 {{
-  "message": "texto de tu pregunta o confirmación",
+  "message": "pregunta corta (ej: '¿A qué hora, {user_name}?')",
   "quick_replies": [
-    {{"id": "id_unico", "label": "texto botón", "value": {{ "action": "...", "data": "..." }} }}
+    {{"id": "mañana_9", "label": "Mañana 9:00", "value": {{ "time": "tomorrow 9am" }} }},
+    {{"id": "en_1h", "label": "En 1 hora", "value": {{ "time": "in 1 hour" }} }}
   ],
-  "next_step": "ask_time" | "ask_date" | "confirm" | "complete",
-  "extracted_data_update": {{ ... datos nuevos extraídos del último mensaje usuario ... }}
+  "next_step": "ask_time" | "ask_date" | "complete",
+  "extracted_data_update": {{ ... datos nuevos ... }}
 }}
 """.strip()
 
